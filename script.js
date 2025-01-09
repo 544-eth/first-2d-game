@@ -1,16 +1,17 @@
 window.addEventListener('load', function(){
     const canvas = document.getElementById('canvas1')
     const ctx = canvas.getContext('2d')
-    canvas.width = 800
+    canvas.width = 1400
     canvas.height =720
     let enemies = []
     let score = 0
     let gameOver = false
 
-
     class InputHandler {
         constructor(){
             this.keys = []
+            this.touchY = ''
+            this.touchTreshold = 30
             window.addEventListener('keydown', e => {
                 if ((   e.key === 'ArrowDown' ||
                         e.key === 'ArrowUp' ||
@@ -18,7 +19,7 @@ window.addEventListener('load', function(){
                         e.key === 'ArrowRight')           
                         && this.keys.indexOf(e.key) === -1){
                     this.keys.push(e.key)
-                }                 
+                } else if (e.key === 'Enter' && gameOver) restartGame()             
             })
             window.addEventListener('keyup', e => {
                 if (    e.key === 'ArrowDown' ||
@@ -27,6 +28,22 @@ window.addEventListener('load', function(){
                         e.key === 'ArrowRight'){
                     this.keys.splice(this.keys.indexOf(e.key), 1)
                 }                 
+            })
+            window.addEventListener('touchstart', e => {
+                this.touchY = e.changedTouches[0].pageY
+            })
+            window.addEventListener('touchmove', e => {
+                const swipeDistance = e.changedTouches[0].pageY - this.touchY
+                if (swipeDistance <- this.touchTreshold && this.keys.indexOf('swipe up') === -1) this.keys.push('swipe up')
+                    else if (swipeDistance > this.touchTreshold && this.keys.indexOf('swipe down') === -1) 
+                    {
+                        this.keys.push('swipe down')
+                        if (gameOver) restartGame()
+                    }
+            })
+            window.addEventListener('touchend', e => {
+                this.keys.splice(this.keys.indexOf('swipe up'), 1)
+                this.keys.splice(this.keys.indexOf('swipe down'), 1)
             })
         }
     }
@@ -43,23 +60,22 @@ window.addEventListener('load', function(){
             this.frameX = 0
             this.maxFrame = 8
             this.frameY = 0
-            this.fps = 20
+            this.fps = 100
             this.frameTimer = 0
             this.frameInterval = 1000/this.fps
             this.speed = 0 
             this.vy = 0
             this.gravity = 1
         }
+
+        restart(){
+            this.x = 100
+            this.y = this.gameHeight - this.height
+            this.maxFrame = 8
+            this.frameY = 0
+        }
+
         draw(context){
-            // context.strokeStyle = 'red'
-            // context.strokeRect(this.x, this.y, this.width, this.height)
-            // context.beginPath()
-            // context.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2)
-            // context.stroke()
-            // context.strokeStyle = 'blue'
-            // context.beginPath()
-            // context.arc(this.x, this.y, this.width/2, 0, Math.PI * 2)
-            // context.stroke()
             context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height)
         }
         update(input, deltaTime, enemies){
@@ -131,6 +147,9 @@ window.addEventListener('load', function(){
             this.x -= this.speed
             if (this.x < 0 - this.width) this.x = 0
         }
+        restart(){
+            this.x = 0
+        }
     }
 
     class Enemy {
@@ -151,15 +170,6 @@ window.addEventListener('load', function(){
             this.markedForDeletion = false
         }
         draw (context){
-            // context.strokeStyle = 'red'
-            // context.strokeRect(this.x, this.y, this.width, this.height)
-            // context.beginPath()
-            // context.arc(this.x + this.width/2, this.y + this.height/2, this.width/2, 0, Math.PI * 2)
-            // context.stroke()
-            // context.strokeStyle = 'blue'
-            // context.beginPath()
-            // context.arc(this.x, this.y, this.width/2, 0, Math.PI * 2)
-            // context.stroke()
             context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.x, this.y, this.width, this.height)
         }
         update(deltaTime){
@@ -193,15 +203,29 @@ window.addEventListener('load', function(){
         enemies = enemies.filter(enemy => !enemy.markedForDeletion)
     }
 
-    function displayStatusText(context){
-        context.fillStyle = 'black'
-        context.font = '30px Helvetica'
-        context.fillText('score: ' + score, 20, 50)
-        if (gameOver){
-            context.textAlign = 'center'
-            context.fillStyle = 'black'
-            context.fillText('GAME OVER', canvas.width/2, 200)
+    function displayStatusText(context) {
+        context.textAlign = 'left';
+        context.fillStyle = 'black';
+        context.font = 'bold 30px arial'; // Made the text bold
+        context.fillText('score: ' + score, 20, 50);
+        if (gameOver) {
+            context.textAlign = 'center';
+            context.fillStyle = 'white';
+            context.font = 'bold 30px arial'; // Made the text bold
+            context.fillText('GAME OVER', canvas.width / 2, 200); // Display GAME OVER
+            context.fillText('Press Enter to restart', canvas.width / 2, 250); // Display instruction below
         }
+    }
+    
+    
+
+    function restartGame(){
+        player.restart()
+        background.restart()
+        enemies = []
+        score = 0
+        gameOver = false
+        animate(0)
     }
 
     const input = new InputHandler()
@@ -218,7 +242,7 @@ window.addEventListener('load', function(){
         lastTime = timeStamp
         ctx.clearRect (0, 0, canvas.width, canvas.height)
         background.draw(ctx)
-        // background.update()
+        background.update()
         player.draw(ctx)
         player.update(input, deltaTime, enemies)
         handleEnemies(deltaTime)
