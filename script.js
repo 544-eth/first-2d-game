@@ -6,6 +6,7 @@ window.addEventListener('load', function(){
     let enemies = []
     let score = 0
     let gameOver = false
+    const fullScreenButton = document.getElementById('fullScreenButton')
 
     class InputHandler {
         constructor(){
@@ -76,15 +77,23 @@ window.addEventListener('load', function(){
         }
 
         draw(context){
+            // context.lineWidth = 5
+            // context.strokeStyle = 'gold'
+            // context.beginPath()
+            // context.arc(this.x + this.width/2, this.y + this.height/2 + 20, this.width/3, 0, Math.PI * 2)
+            // context.stroke()
             context.drawImage(this.image, this.frameX * this.width, this.frameY * this.height, this.width, this.height, this.x, this.y, this.width, this.height)
         }
+
+        
+
         update(input, deltaTime, enemies){
             // collision detection
             enemies.forEach(enemy => {
-                const dx = (enemy.x + enemy.width/2) - (this.x + this.width/2)
-                const dy = (enemy.y + enemy.height/2) - (this.y + this.height/2)
+                const dx = (enemy.x + enemy.width/2 - 20) - (this.x + this.width/2)
+                const dy = (enemy.y + enemy.height/2) - (this.y + this.height/2 + 20)
                 const distance = Math.sqrt(dx * dx + dy * dy)
-                if (distance < enemy.width/2 + this.width/2){
+                if (distance < enemy.width/3 + this.width/3){
                     gameOver = true
                 }
             })
@@ -101,8 +110,8 @@ window.addEventListener('load', function(){
                 this.speed = 5
             } else if (input.keys.indexOf('ArrowLeft') > -1) {
                 this.speed = -5
-            } else if (input.keys.indexOf('ArrowUp') > -1 && this.onGround()) {
-                this.vy -= 30
+            } else if ((input.keys.indexOf('ArrowUp') > -1 || input.keys.indexOf('swipe up') > -1 ) && this.onGround()) {
+                this.vy -= 32
             } else {
                 this.speed = 0
             }
@@ -166,11 +175,16 @@ window.addEventListener('load', function(){
             this.fps = 20
             this.frameTimer = 0
             this.frameInterval = 1000/this.fps
-            this.speed = 6
+            this.speed = 8
             this.markedForDeletion = false
         }
         draw (context){
             context.drawImage(this.image, this.frameX * this.width, 0, this.width, this.height, this.x, this.y, this.width, this.height)
+            // context.lineWidth = 5
+            // context.strokeStyle = 'red'
+            // context.beginPath()
+            // context.arc(this.x + this.width/2 - 20, this.y + this.height/2, this.width/3, 0, Math.PI * 2)
+            // context.stroke()
         }
         update(deltaTime){
             if (this.frameTimer > this.frameInterval){
@@ -227,6 +241,18 @@ window.addEventListener('load', function(){
         gameOver = false
         animate(0)
     }
+
+    function toggleFullScreen() {
+        console.log(document.fullscreenElement);
+        if (!document.fullscreenElement) {
+            canvas.requestFullscreen().catch(err => {
+            alert(`An error occurred while trying to enable full-screen mode: ${err.message}. Please check your browser settings or try again.`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+    fullScreenButton.addEventListener('click', toggleFullScreen)
 
     const input = new InputHandler()
     const player = new Player(canvas.width, canvas.height) 
